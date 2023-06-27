@@ -17,9 +17,13 @@ RUN conda config --add channels conda-forge
 RUN conda install pybind11 eigen pytest-forked networkx mdanalysis=1.1.1
 
 # Clone HOOMD
-ENV HOOMD_TAG=v3.7.0
+ENV HOOMD_TAG=v3.11.0
 
 RUN git clone --recursive https://github.com/glotzerlab/hoomd-blue.git -b $HOOMD_TAG --single-branch
+
+# add ARG to trigger rebuilds without killing whole cache (skip installs & cloning HOOMD)
+# set this like: docker build -t <tag> --build-arg BUILD_DATE=$(date +%Y-%m-%d-%H:%M:%S) -< dockerfile_gpuhoomdtf
+ARG BUILD_DATE=UNDEFINED
 
 # Link HOOMD-TF in HOOMD/hoomd modules
 RUN git clone -b hoomd3-update --single-branch https://github.com/ur-whitelab/hoomd-tf.git
@@ -51,7 +55,7 @@ RUN cmake .. \
         -DBUILD_MPCD=OFF \
         -DBUILD_MD=ON
 
-RUN make && \
+RUN make -j8 && \
     make install
 
 # ensure build and linking succeeded
